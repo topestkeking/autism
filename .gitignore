@@ -1,0 +1,8 @@
+# JUCE Build Artefacts
+/VocalAggressorRack/VocalAggressorRack/Builds/
+/VocalAggressorRack/VocalAggressorRack/JuceLibraryCode/
+
+# General C++ build files
+*.o
+*.obj
+*.log
