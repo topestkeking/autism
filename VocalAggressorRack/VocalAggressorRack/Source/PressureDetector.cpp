@@ -29,14 +29,14 @@ void PressureDetector::prepare(const juce::dsp::ProcessSpec& spec)
     midFilter.prepare(monoSpec);
     highFilter.prepare(monoSpec);
 
-    // Low band for "Density" (e.g., up to 400Hz)
-    *lowFilter.coefficients = *juce::dsp::IIR::Coefficients<float>::makeLowPass(sampleRate, 400.0f);
+    // Low band for "Density" (Fundamental weight ~100-400Hz)
+    *lowFilter.coefficients = *juce::dsp::IIR::Coefficients<float>::makeLowPass(sampleRate, 350.0f);
 
-    // Mid band for "Timbre" analysis (e.g., 2kHz to 5kHz)
-    *midFilter.coefficients = *juce::dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, 3500.0f, 0.5f);
+    // Mid band for "Timbre" analysis (Harshness/Presence ~2.5kHz-5kHz)
+    *midFilter.coefficients = *juce::dsp::IIR::Coefficients<float>::makeBandPass(sampleRate, 3500.0f, 0.4f);
 
-    // High band for "Harshness"
-    *highFilter.coefficients = *juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 6000.0f);
+    // High band for "Harshness/Air" (>6kHz)
+    *highFilter.coefficients = *juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 7000.0f);
 
     smoothedIntensity.reset(sampleRate, 0.05);
     smoothedDensity.reset(sampleRate, 0.1);

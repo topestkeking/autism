@@ -29,19 +29,34 @@ void SpaceModule::process(juce::AudioBuffer<float>& buffer, const PressureDetect
 {
     float intensity = detector.getIntensity();
 
-    // Reverb parameters morphing
+    // Reverb parameters morphing: Room -> Plate -> Bloom
     juce::Reverb::Parameters params;
 
-    // Size and decay increase with Intensity (Bloom effect)
-    params.roomSize = juce::jlimit(0.1f, 1.0f, characterAmount * 0.5f + intensity * 0.5f);
-    params.damping = 1.0f - characterAmount;
+    float bloom = characterAmount * intensity; // Explosive growth when loud and char is high
+
+    if (characterAmount < 0.5f) // Room towards Plate
+    {
+        float morph = characterAmount * 2.0f;
+        params.roomSize = 0.1f * (1.0f - morph) + 0.6f * morph;
+        params.damping = 0.8f * (1.0f - morph) + 0.3f * morph;
+    }
+    else // Plate towards Bloom
+    {
+        float morph = (characterAmount - 0.5f) * 2.0f;
+        params.roomSize = 0.6f * (1.0f - morph) + 1.0f * morph;
+        params.damping = 0.3f * (1.0f - morph) + 0.1f * morph;
+    }
+
+    // Add intensity "Bloom"
+    params.roomSize = juce::jlimit(0.0f, 1.0f, params.roomSize + bloom * 0.5f);
     params.width = 1.0f;
 
-    // Ducking effect: High intensity reduces wet level slightly to keep transients clear,
-    // then it "blooms" out as intensity drops.
-    float targetWet = mixAmount * (0.3f + intensity * 0.7f);
-    smoothedWet.setTargetValue(targetWet);
+    // Auto-ducking: High intensity pushes reverb down initially to keep transients,
+    // then it swells as intensity drops (modeled by smoothing)
+    float ducking = 1.0f - (intensity * 0.5f);
+    float targetWet = mixAmount * ducking * (1.0f + bloom);
 
+    smoothedWet.setTargetValue(juce::jlimit(0.0f, 1.0f, targetWet));
     params.wetLevel = smoothedWet.getNextValue();
     params.dryLevel = 1.0f;
 

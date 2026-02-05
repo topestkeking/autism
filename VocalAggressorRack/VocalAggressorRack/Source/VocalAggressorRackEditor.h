@@ -5,6 +5,63 @@
 class VocalAggressorRack; // Forward declaration
 
 //==============================================================================
+class PatchCable : public juce::Component
+{
+public:
+    PatchCable(juce::AudioProcessorValueTreeState& vts, const juce::String& paramID)
+        : apvts(vts), id(paramID)
+    {
+        setInterceptsMouseClicks(true, false);
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        bool bypassed = *apvts.getRawParameterValue(id) > 0.5f;
+
+        g.setColour(bypassed ? juce::Colours::grey : juce::Colours::red.darker(0.2f));
+
+        auto bounds = getLocalBounds().toFloat();
+        juce::Path p;
+
+        if (bypassed)
+        {
+            // Dangling cable
+            p.startNewSubPath(bounds.getCentreX(), 0);
+            p.quadraticTo(bounds.getCentreX() + 10, bounds.getHeight() * 0.4f,
+                         bounds.getCentreX() - 5, bounds.getHeight() * 0.7f);
+        }
+        else
+        {
+            // Connected cable
+            p.startNewSubPath(bounds.getCentreX(), 0);
+            p.quadraticTo(bounds.getCentreX() - 20, bounds.getHeight() * 0.5f,
+                         bounds.getCentreX(), bounds.getHeight());
+        }
+
+        g.strokePath(p, juce::PathStrokeType(4.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+        // Plugs
+        g.setColour(juce::Colours::silver);
+        g.fillEllipse(bounds.getCentreX() - 4, -2, 8, 8);
+        if (!bypassed)
+            g.fillEllipse(bounds.getCentreX() - 4, bounds.getHeight() - 6, 8, 8);
+        else
+            g.fillEllipse(p.getCurrentPosition().getX() - 4, p.getCurrentPosition().getY() - 4, 8, 8);
+    }
+
+    void mouseDown(const juce::MouseEvent&) override
+    {
+        auto* param = apvts.getParameter(id);
+        param->setValueNotifyingHost(param->getValue() > 0.5f ? 0.0f : 1.0f);
+        repaint();
+    }
+
+private:
+    juce::AudioProcessorValueTreeState& apvts;
+    juce::String id;
+};
+
+//==============================================================================
 class LevelMeter : public juce::Component, public juce::Timer
 {
 public:
@@ -20,9 +77,37 @@ private:
 class RackModule : public juce::GroupComponent
 {
 public:
-    RackModule(const juce::String& name) : juce::GroupComponent({}, name)
+    RackModule(const juce::String& name, juce::AudioProcessorValueTreeState& vts, const juce::String& bypassID)
+        : juce::GroupComponent({}, name), apvts(vts), id(bypassID)
     {
         setTextLabelPosition(juce::Justification::centredTop);
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        auto bounds = getLocalBounds().toFloat();
+        bool bypassed = *apvts.getRawParameterValue(id) > 0.5f;
+
+        // Faceplate
+        g.setColour(juce::Colours::darkgrey.darker(0.5f));
+        g.fillRoundedRectangle(bounds.reduced(2), 4.0f);
+
+        if (bypassed)
+            g.setOpacity(0.3f);
+        else
+            g.setOpacity(1.0f);
+
+        g.setColour(juce::Colours::white.withAlpha(0.1f));
+        g.drawRoundedRectangle(bounds.reduced(2), 4.0f, 1.0f);
+
+        juce::GroupComponent::paint(g);
+
+        // Rack Screws
+        g.setColour(juce::Colours::grey);
+        g.fillEllipse(5, 5, 4, 4);
+        g.fillEllipse(bounds.getWidth() - 9, 5, 4, 4);
+        g.fillEllipse(5, bounds.getHeight() - 9, 4, 4);
+        g.fillEllipse(bounds.getWidth() - 9, bounds.getHeight() - 9, 4, 4);
     }
 
     void addControl(juce::Component& c, juce::Component& label)
@@ -51,6 +136,8 @@ public:
     }
 
 private:
+    juce::AudioProcessorValueTreeState& apvts;
+    juce::String id;
     juce::Array<juce::Component*> controls;
     juce::Array<juce::Component*> labels;
 };
@@ -69,42 +156,38 @@ private:
     VocalAggressorRack& audioProcessor;
 
     juce::Slider intensitySlider;
+    juce::Label intensityLabel;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> intensityAttachment;
 
-    RackModule dynModule { "DYNAMICS" };
+    RackModule dynModule;
     juce::Slider dynAmountSlider, dynSustainSlider;
     juce::Label dynAmountLabel, dynSustainLabel;
-    juce::ToggleButton dynBypassButton { "Bypass" };
+    PatchCable dynCable;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> dynAmountAttach, dynSustainAttach;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> dynBypassAttach;
 
-    RackModule eqModule { "EQ" };
+    RackModule eqModule;
     juce::Slider eqScoopSlider, eqBiteSlider;
     juce::Label eqScoopLabel, eqBiteLabel;
-    juce::ToggleButton eqBypassButton { "Bypass" };
+    PatchCable eqCable;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> eqScoopAttach, eqBiteAttach;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> eqBypassAttach;
 
-    RackModule harmModule { "HARMONICS" };
+    RackModule harmModule;
     juce::Slider harmGritSlider, harmClaritySlider;
     juce::Label harmGritLabel, harmClarityLabel;
-    juce::ToggleButton harmBypassButton { "Bypass" };
+    PatchCable harmCable;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> harmGritAttach, harmClarityAttach;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> harmBypassAttach;
 
-    RackModule shiftModule { "SHIFT" };
+    RackModule shiftModule;
     juce::Slider shiftPitchSlider, shiftFormantSlider;
     juce::Label shiftPitchLabel, shiftFormantLabel;
-    juce::ToggleButton shiftBypassButton { "Bypass" };
+    PatchCable shiftCable;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> shiftPitchAttach, shiftFormantAttach;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> shiftBypassAttach;
 
-    RackModule spaceModule { "SPACE" };
+    RackModule spaceModule;
     juce::Slider spaceMixSlider, spaceCharSlider;
     juce::Label spaceMixLabel, spaceCharLabel;
-    juce::ToggleButton spaceBypassButton { "Bypass" };
+    PatchCable spaceCable;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> spaceMixAttach, spaceCharAttach;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> spaceBypassAttach;
 
     LevelMeter meter;
 

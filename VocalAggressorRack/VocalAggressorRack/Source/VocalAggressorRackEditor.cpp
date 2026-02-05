@@ -24,7 +24,18 @@ void LevelMeter::paint(juce::Graphics& g)
 }
 
 VocalAggressorRackEditor::VocalAggressorRackEditor (VocalAggressorRack& p)
-    : AudioProcessorEditor (&p), audioProcessor (p), meter(p)
+    : AudioProcessorEditor (&p), audioProcessor (p),
+      dynModule("DYNAMICS", p.apvts, "bypass_dyn"),
+      dynCable(p.apvts, "bypass_dyn"),
+      eqModule("EQ", p.apvts, "bypass_eq"),
+      eqCable(p.apvts, "bypass_eq"),
+      harmModule("HARMONICS", p.apvts, "bypass_harm"),
+      harmCable(p.apvts, "bypass_harm"),
+      shiftModule("SHIFT", p.apvts, "bypass_shift"),
+      shiftCable(p.apvts, "bypass_shift"),
+      spaceModule("SPACE", p.apvts, "bypass_space"),
+      spaceCable(p.apvts, "bypass_space"),
+      meter(p)
 {
     auto setupSlider = [this](juce::Slider& s, juce::Label& l, const juce::String& name) {
         s.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
@@ -35,7 +46,13 @@ VocalAggressorRackEditor::VocalAggressorRackEditor (VocalAggressorRack& p)
 
     // Intensity
     intensitySlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    intensitySlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     addAndMakeVisible(intensitySlider);
+
+    intensityLabel.setText("INTENSITY", juce::dontSendNotification);
+    intensityLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(intensityLabel);
+
     intensityAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "intensity", intensitySlider);
 
     // Dynamics
@@ -43,55 +60,50 @@ VocalAggressorRackEditor::VocalAggressorRackEditor (VocalAggressorRack& p)
     setupSlider(dynSustainSlider, dynSustainLabel, "Sustain");
     dynModule.addControl(dynAmountSlider, dynAmountLabel);
     dynModule.addControl(dynSustainSlider, dynSustainLabel);
-    dynModule.addAndMakeVisible(dynBypassButton);
     addAndMakeVisible(dynModule);
+    addAndMakeVisible(dynCable);
     dynAmountAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "dyn_amount", dynAmountSlider);
     dynSustainAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "dyn_sustain", dynSustainSlider);
-    dynBypassAttach = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "bypass_dyn", dynBypassButton);
 
     // EQ
     setupSlider(eqScoopSlider, eqScoopLabel, "Scoop");
     setupSlider(eqBiteSlider, eqBiteLabel, "Bite");
     eqModule.addControl(eqScoopSlider, eqScoopLabel);
     eqModule.addControl(eqBiteSlider, eqBiteLabel);
-    eqModule.addAndMakeVisible(eqBypassButton);
     addAndMakeVisible(eqModule);
+    addAndMakeVisible(eqCable);
     eqScoopAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "eq_scoop", eqScoopSlider);
     eqBiteAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "eq_bite", eqBiteSlider);
-    eqBypassAttach = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "bypass_eq", eqBypassButton);
 
     // Harmonics
     setupSlider(harmGritSlider, harmGritLabel, "Grit");
     setupSlider(harmClaritySlider, harmClarityLabel, "Clarity");
     harmModule.addControl(harmGritSlider, harmGritLabel);
     harmModule.addControl(harmClaritySlider, harmClarityLabel);
-    harmModule.addAndMakeVisible(harmBypassButton);
     addAndMakeVisible(harmModule);
+    addAndMakeVisible(harmCable);
     harmGritAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "harm_grit", harmGritSlider);
     harmClarityAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "harm_clarity", harmClaritySlider);
-    harmBypassAttach = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "bypass_harm", harmBypassButton);
 
     // Shift
     setupSlider(shiftPitchSlider, shiftPitchLabel, "Pitch");
     setupSlider(shiftFormantSlider, shiftFormantLabel, "Formant");
     shiftModule.addControl(shiftPitchSlider, shiftPitchLabel);
     shiftModule.addControl(shiftFormantSlider, shiftFormantLabel);
-    shiftModule.addAndMakeVisible(shiftBypassButton);
     addAndMakeVisible(shiftModule);
+    addAndMakeVisible(shiftCable);
     shiftPitchAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "shift_pitch", shiftPitchSlider);
     shiftFormantAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "shift_formant", shiftFormantSlider);
-    shiftBypassAttach = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "bypass_shift", shiftBypassButton);
 
     // Space
     setupSlider(spaceMixSlider, spaceMixLabel, "Mix");
     setupSlider(spaceCharSlider, spaceCharLabel, "Char");
     spaceModule.addControl(spaceMixSlider, spaceMixLabel);
     spaceModule.addControl(spaceCharSlider, spaceCharLabel);
-    spaceModule.addAndMakeVisible(spaceBypassButton);
     addAndMakeVisible(spaceModule);
+    addAndMakeVisible(spaceCable);
     spaceMixAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "space_mix", spaceMixSlider);
     spaceCharAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "space_char", spaceCharSlider);
-    spaceBypassAttach = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "bypass_space", spaceBypassButton);
 
     addAndMakeVisible(meter);
 
@@ -102,10 +114,16 @@ VocalAggressorRackEditor::~VocalAggressorRackEditor() {}
 
 void VocalAggressorRackEditor::paint (juce::Graphics& g)
 {
-    g.fillAll (juce::Colours::darkgrey);
-    g.setColour (juce::Colours::white);
-    g.setFont (20.0f);
+    g.fillAll (juce::Colour(0xff1a1a1a)); // Very dark rack background
+
+    g.setColour (juce::Colours::orange.withAlpha(0.7f));
+    g.setFont (juce::Font(24.0f, juce::Font::bold));
     g.drawText ("VOCAL AGGRESSOR RACK", getLocalBounds().removeFromTop(40), juce::Justification::centred, true);
+
+    // Draw some rack rails
+    g.setColour(juce::Colours::black);
+    g.fillRect(0, 0, 10, getHeight());
+    g.fillRect(getWidth() - 10, 0, 10, getHeight());
 }
 
 void VocalAggressorRackEditor::resized()
@@ -118,22 +136,23 @@ void VocalAggressorRackEditor::resized()
 
     auto mainArea = area.reduced(10);
 
-    // Master Intensity at the top
-    auto topArea = mainArea.removeFromTop(100);
-    intensitySlider.setBounds(topArea.withSizeKeepingCentre(80, 80));
+    // Master Intensity at the top (Larger now)
+    auto topArea = mainArea.removeFromTop(120);
+    intensityLabel.setBounds(topArea.removeFromTop(20));
+    intensitySlider.setBounds(topArea.withSizeKeepingCentre(100, 100));
 
     // Modules stacked vertically
     int moduleHeight = mainArea.getHeight() / 5;
 
-    auto layoutModule = [&](RackModule& m, juce::ToggleButton& b, juce::Rectangle<int> bounds) {
+    auto layoutModule = [&](RackModule& m, PatchCable& c, juce::Rectangle<int> bounds) {
         m.setBounds(bounds);
-        auto bArea = m.getLocalBounds().reduced(10);
-        b.setBounds(bArea.removeFromRight(60).withHeight(20).withY(20));
+        auto cArea = bounds;
+        c.setBounds(cArea.removeFromRight(40).reduced(5));
     };
 
-    layoutModule(dynModule, dynBypassButton, mainArea.removeFromTop(moduleHeight));
-    layoutModule(eqModule, eqBypassButton, mainArea.removeFromTop(moduleHeight));
-    layoutModule(harmModule, harmBypassButton, mainArea.removeFromTop(moduleHeight));
-    layoutModule(shiftModule, shiftBypassButton, mainArea.removeFromTop(moduleHeight));
-    layoutModule(spaceModule, spaceBypassButton, mainArea.removeFromTop(moduleHeight));
+    layoutModule(dynModule, dynCable, mainArea.removeFromTop(moduleHeight));
+    layoutModule(eqModule, eqCable, mainArea.removeFromTop(moduleHeight));
+    layoutModule(harmModule, harmCable, mainArea.removeFromTop(moduleHeight));
+    layoutModule(shiftModule, shiftCable, mainArea.removeFromTop(moduleHeight));
+    layoutModule(spaceModule, spaceCable, mainArea.removeFromTop(moduleHeight));
 }
