@@ -22,6 +22,12 @@ public:
     void prepare(const juce::dsp::ProcessSpec& spec);
     void process(juce::AudioBuffer<float>& buffer, const PressureDetector& detector);
 
+    float gritAmount = 0.5f;
+    float clarityAmount = 0.5f;
+
 private:
-    // Parameters for harmonics will go here
+    double sampleRate = 44100.0;
+
+    // High-pass filter for clarity harmonics
+    juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> clarityHPF;
 };

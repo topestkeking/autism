@@ -22,7 +22,12 @@ public:
     void prepare(const juce::dsp::ProcessSpec& spec);
     void process(juce::AudioBuffer<float>& buffer, const PressureDetector& detector);
 
+    float scoopAmount = 0.5f;
+    float biteAmount = 0.5f;
+
 private:
-    double sampleRate;
-    juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> lowPassFilter;
+    double sampleRate = 44100.0;
+
+    juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> scoopFilter;
+    juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> biteFilter;
 };

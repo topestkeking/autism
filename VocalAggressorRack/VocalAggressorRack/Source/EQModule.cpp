@@ -10,7 +10,7 @@
 
 #include "EQModule.h"
 
-EQModule::EQModule() : sampleRate(44100.0) // Initialize with a default
+EQModule::EQModule()
 {
 }
 
@@ -21,25 +21,29 @@ EQModule::~EQModule()
 void EQModule::prepare(const juce::dsp::ProcessSpec& spec)
 {
     sampleRate = spec.sampleRate;
-    lowPassFilter.prepare(spec);
-    lowPassFilter.reset();
+    scoopFilter.prepare(spec);
+    biteFilter.prepare(spec);
 }
 
 void EQModule::process(juce::AudioBuffer<float>& buffer, const PressureDetector& detector)
 {
-    float intensity = detector.getIntensity();
+    float density = detector.getDensity();
+    float timbre = detector.getTimbre();
 
-    // Map intensity (0.0 to 1.0) to a cutoff frequency range (e.g., 200Hz to 20kHz)
-    // We'll use a logarithmic mapping for a more musical feel.
-    float minFreq = 200.0f;
-    float maxFreq = 20000.0f;
-    float cutoff = minFreq * std::pow(maxFreq / minFreq, intensity);
+    // 1. Dynamic Scoop (Low-Mid Mud Removal)
+    // Deepen scoop when density is high or timbre is "muddy"
+    float scoopGain = juce::Decibels::decibelsToGain(-24.0f * (scoopAmount * (0.5f + density + timbre * 0.5f)));
+    *scoopFilter.state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 300.0f, 1.0f, scoopGain);
 
-    // Update the filter coefficients
-    *lowPassFilter.state = *juce::dsp::IIR::Coefficients<float>::makeLowPass(sampleRate, cutoff);
+    // 2. Dynamic Bite (High-Mid Aggression)
+    // Increase bite normally, but ease off if timbre is already harsh/piercing
+    float biteDrive = biteAmount * (1.5f - timbre);
+    float biteGain = juce::Decibels::decibelsToGain(12.0f * biteDrive);
+    *biteFilter.state = *juce::dsp::IIR::Coefficients<float>::makePeakFilter(sampleRate, 3500.0f, 0.7f, biteGain);
 
-    // Process the audio
     juce::dsp::AudioBlock<float> block(buffer);
     juce::dsp::ProcessContextReplacing<float> context(block);
-    lowPassFilter.process(context);
+
+    scoopFilter.process(context);
+    biteFilter.process(context);
 }
