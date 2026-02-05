@@ -31,6 +31,34 @@ void LevelMeter::paint(juce::Graphics& g)
     g.fillRect(bounds.withTop(bounds.getHeight() - height));
 }
 
+void PressureMap::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat();
+    g.setColour(juce::Colours::black.withAlpha(0.5f));
+    g.fillRoundedRectangle(bounds, 5.0f);
+
+    const auto& detector = processor.getPressureDetector();
+    float intensity = detector.getIntensity();
+    float density = detector.getDensity();
+    float timbre = detector.getTimbre();
+
+    // Draw a 2D map: Intensity (X) vs Density (Y)
+    g.setColour(juce::Colours::orange);
+    float x = juce::jmap(intensity, 0.0f, 1.0f, 15.0f, bounds.getWidth() - 15.0f);
+    float y = juce::jmap(density, 0.0f, 1.0f, bounds.getHeight() - 15.0f, 15.0f);
+
+    // Circle size morphs with Timbre (Harshness)
+    float radius = 4.0f + timbre * 10.0f;
+    g.fillEllipse(x - radius, y - radius, radius * 2.0f, radius * 2.0f);
+
+    g.setColour(juce::Colours::orange.withAlpha(0.2f));
+    g.drawEllipse(x - radius - 5, y - radius - 5, (radius + 5) * 2.0f, (radius + 5) * 2.0f, 1.0f);
+
+    g.setColour(juce::Colours::white.withAlpha(0.5f));
+    g.setFont(10.0f);
+    g.drawText("PRESSURE MAP", bounds.reduced(5), juce::Justification::bottomLeft);
+}
+
 VocalAggressorRackEditor::VocalAggressorRackEditor (VocalAggressorRack& p)
     : AudioProcessorEditor (&p), audioProcessor (p),
       dynModule("DYNAMICS", p.apvts, "bypass_dyn"),
@@ -43,7 +71,8 @@ VocalAggressorRackEditor::VocalAggressorRackEditor (VocalAggressorRack& p)
       shiftCable(p.apvts, "bypass_shift"),
       spaceModule("SPACE", p.apvts, "bypass_space"),
       spaceCable(p.apvts, "bypass_space"),
-      meter(p)
+      meter(p),
+      pressureMap(p)
 {
     auto setupSlider = [this](juce::Slider& s, juce::Label& l, const juce::String& name) {
         s.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
@@ -113,9 +142,32 @@ VocalAggressorRackEditor::VocalAggressorRackEditor (VocalAggressorRack& p)
     spaceMixAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "space_mix", spaceMixSlider);
     spaceCharAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "space_char", spaceCharSlider);
 
-    addAndMakeVisible(meter);
+    // The Muscle
+    setupSlider(muscleSlider, muscleLabel, "MUSCLE");
+    addAndMakeVisible(muscleSlider);
+    addAndMakeVisible(muscleLabel);
+    muscleAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "muscle", muscleSlider);
 
-    setSize (400, 700);
+    // New Features
+    setupSlider(voidWidthSlider, voidWidthLabel, "VOID");
+    addAndMakeVisible(voidWidthSlider);
+    addAndMakeVisible(voidWidthLabel);
+    voidWidthAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "void_width", voidWidthSlider);
+
+    setupSlider(wallDriveSlider, wallDriveLabel, "DRIVE");
+    addAndMakeVisible(wallDriveSlider);
+    addAndMakeVisible(wallDriveLabel);
+    wallDriveAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "wall_drive", wallDriveSlider);
+
+    setupSlider(wallCeilSlider, wallCeilLabel, "CEIL");
+    addAndMakeVisible(wallCeilSlider);
+    addAndMakeVisible(wallCeilLabel);
+    wallCeilAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "wall_ceil", wallCeilSlider);
+
+    addAndMakeVisible(meter);
+    addAndMakeVisible(pressureMap);
+
+    setSize (500, 850);
 }
 
 VocalAggressorRackEditor::~VocalAggressorRackEditor() {}
@@ -144,10 +196,30 @@ void VocalAggressorRackEditor::resized()
 
     auto mainArea = area.reduced(10);
 
-    // Master Intensity at the top (Larger now)
-    auto topArea = mainArea.removeFromTop(120);
-    intensityLabel.setBounds(topArea.removeFromTop(20));
-    intensitySlider.setBounds(topArea.withSizeKeepingCentre(100, 100));
+    // Header: Intensity, Muscle, Map
+    auto headerArea = mainArea.removeFromTop(150);
+    auto leftHeader = headerArea.removeFromLeft(180);
+
+    intensityLabel.setBounds(leftHeader.removeFromTop(20));
+    intensitySlider.setBounds(leftHeader.removeFromTop(60).reduced(5));
+    muscleLabel.setBounds(leftHeader.removeFromTop(20));
+    muscleSlider.setBounds(leftHeader.reduced(5));
+
+    pressureMap.setBounds(headerArea.reduced(10));
+
+    // Footer: The Wall and The Void
+    auto footerArea = mainArea.removeFromBottom(100);
+    auto f1 = footerArea.removeFromLeft(footerArea.getWidth() / 3);
+    voidWidthLabel.setBounds(f1.removeFromTop(20));
+    voidWidthSlider.setBounds(f1.reduced(5));
+
+    auto f2 = footerArea.removeFromLeft(footerArea.getWidth() / 2);
+    wallDriveLabel.setBounds(f2.removeFromTop(20));
+    wallDriveSlider.setBounds(f2.reduced(5));
+
+    auto f3 = footerArea;
+    wallCeilLabel.setBounds(f3.removeFromTop(20));
+    wallCeilSlider.setBounds(f3.reduced(5));
 
     // Modules stacked vertically
     int moduleHeight = mainArea.getHeight() / 5;

@@ -46,20 +46,23 @@ void PressureDetector::prepare(const juce::dsp::ProcessSpec& spec)
     analysisBuffer.setSize(1, spec.maximumBlockSize);
 }
 
-void PressureDetector::process(const juce::AudioBuffer<float>& buffer)
+void PressureDetector::process(const juce::AudioBuffer<float>& buffer, const juce::AudioBuffer<float>* sidechain)
 {
     int numSamples = buffer.getNumSamples();
     if (numSamples == 0) return;
 
+    // Use sidechain for analysis if available, otherwise use input buffer
+    const juce::AudioBuffer<float>& analysisSource = (sidechain != nullptr && sidechain->getNumSamples() >= numSamples) ? *sidechain : buffer;
+
     // 1. Intensity: Overall RMS
-    float rawIntensity = buffer.getRMSLevel(0, 0, numSamples);
+    float rawIntensity = analysisSource.getRMSLevel(0, 0, numSamples);
     smoothedIntensity.setTargetValue(juce::jlimit(0.0f, 1.0f, rawIntensity * 2.0f)); // Normalized/boosted
     intensity = smoothedIntensity.getNextValue();
 
     // Use pre-allocated monoBuffer for spectral analysis
-    monoBuffer.copyFrom(0, 0, buffer, 0, 0, numSamples);
-    if (buffer.getNumChannels() > 1) {
-        monoBuffer.addFrom(0, 0, buffer, 1, 0, numSamples);
+    monoBuffer.copyFrom(0, 0, analysisSource, 0, 0, numSamples);
+    if (analysisSource.getNumChannels() > 1) {
+        monoBuffer.addFrom(0, 0, analysisSource, 1, 0, numSamples);
         monoBuffer.applyGain(0.5f);
     }
 

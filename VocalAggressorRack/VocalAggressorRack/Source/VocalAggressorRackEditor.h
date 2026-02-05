@@ -70,6 +70,23 @@ private:
 };
 
 //==============================================================================
+class PressureMap : public juce::Component, public juce::Timer
+{
+public:
+    PressureMap(VocalAggressorRack& p) : processor(p)
+    {
+        startTimerHz(30);
+    }
+
+    void paint(juce::Graphics& g) override;
+
+    void timerCallback() override { repaint(); }
+
+private:
+    VocalAggressorRack& processor;
+};
+
+//==============================================================================
 class LevelMeter : public juce::Component, public juce::Timer
 {
 public:
@@ -198,6 +215,15 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> spaceMixAttach, spaceCharAttach;
 
     LevelMeter meter;
+    PressureMap pressureMap;
+
+    juce::Slider muscleSlider;
+    juce::Label muscleLabel;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> muscleAttach;
+
+    juce::Slider wallDriveSlider, wallCeilSlider, voidWidthSlider;
+    juce::Label wallDriveLabel, wallCeilLabel, voidWidthLabel;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> wallDriveAttach, wallCeilAttach, voidWidthAttach;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VocalAggressorRackEditor)
 };
