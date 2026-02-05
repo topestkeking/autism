@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    HarmonicsModule.h
+    HarmonicsModule.h - Finalized Design
     Created: 27 Dec 2025 4:00:00pm
     Author:  Jules
 
@@ -30,4 +30,6 @@ private:
 
     // High-pass filter for clarity harmonics
     juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> clarityHPF;
+
+    juce::AudioBuffer<float> sidechainBuffer;
 };

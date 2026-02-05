@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    PressureDetector.h
+    PressureDetector.h - Finalized Design
     Created: 27 Dec 2025 3:45:00pm
     Author:  Jules
 
@@ -19,7 +19,7 @@ public:
     ~PressureDetector();
 
     void prepare(const juce::dsp::ProcessSpec& spec);
-    void process(const juce::AudioBuffer<float>& buffer);
+    void process(const juce::AudioBuffer<float>& buffer, const juce::AudioBuffer<float>* sidechain = nullptr);
 
     float getIntensity() const;
     float getDensity() const;
@@ -40,6 +40,9 @@ private:
     juce::LinearSmoothedValue<float> smoothedIntensity { 0.0f };
     juce::LinearSmoothedValue<float> smoothedDensity   { 0.0f };
     juce::LinearSmoothedValue<float> smoothedTimbre    { 0.0f };
+
+    juce::AudioBuffer<float> monoBuffer;
+    juce::AudioBuffer<float> analysisBuffer;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PressureDetector)
 };

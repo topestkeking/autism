@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    ShiftModule.h
+    ShiftModule.h - Finalized Design
     Created: 27 Dec 2025 4:05:00pm
     Author:  Jules
 
