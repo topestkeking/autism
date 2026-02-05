@@ -22,7 +22,12 @@ public:
     void prepare(const juce::dsp::ProcessSpec& spec);
     void process(juce::AudioBuffer<float>& buffer, const PressureDetector& detector);
 
+    float mixAmount = 0.5f;
+    float characterAmount = 0.5f; // 0: Room, 0.5: Plate, 1.0: Bloom
+
 private:
-    double sampleRate;
+    double sampleRate = 44100.0;
     juce::Reverb reverb;
+
+    juce::LinearSmoothedValue<float> smoothedWet { 0.0f };
 };

@@ -8,33 +8,6 @@
   ==============================================================================
 */
 
-/*******************************************************************************
- The block below describes the properties of this PIP. A PIP is a short snippet
- of code that can be read by the Projucer and used to generate a JUCE project.
-
- BEGIN_JUCE_PIP_METADATA
-
- name:             VocalAggressorRack
- version:          1.0.0
- vendor:           Jules
- website:          http://juce.com
- description:      Aggressive vocal processing rack.
-
- dependencies:     juce_audio_basics, juce_audio_devices, juce_audio_formats,
-                   juce_audio_plugin_client, juce_audio_processors,
-                   juce_audio_utils, juce_core, juce_data_structures,
-                   juce_events, juce_graphics, juce_gui_basics, juce_gui_extra
- exporters:        xcode_mac, vs2019, linux_make
-
- type:             AudioProcessor
- mainClass:        VocalAggressorRack
-
- useLocalCopy:     1
-
- END_JUCE_PIP_METADATA
-
-*******************************************************************************/
-
 #pragma once
 
 #include "PressureDetector.h"
@@ -63,6 +36,7 @@ public:
         spec.maximumBlockSize = samplesPerBlock;
         spec.numChannels = getTotalNumOutputChannels();
 
+        pressureDetector.prepare(spec);
         dynamicsModule.prepare(spec);
         eqModule.prepare(spec);
         harmonicsModule.prepare(spec);
@@ -70,17 +44,12 @@ public:
         spaceModule.prepare(spec);
     }
 
-    void releaseResources() override
-    {
-        // When playback stops, you can use this as an opportunity to free up any
-        // spare memory, etc.
-    }
+    void releaseResources() override {}
 
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override
     {
         if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
             return false;
-
         return true;
     }
 
@@ -92,6 +61,9 @@ public:
 
         for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
             buffer.clear (i, 0, buffer.getNumSamples());
+
+        // Update module parameters from the Master Intensity knob (simplified)
+        updateParameters();
 
         // 1. Analyze the pressure
         pressureDetector.process(buffer);
@@ -108,25 +80,43 @@ public:
     juce::AudioProcessorEditor* createEditor() override          { return new juce::GenericAudioProcessorEditor (*this); }
     bool hasEditor() const override                              { return true; }
 
-    //==============================================================================
-    const juce::String getName() const override                  { return JucePlugin_Name; }
+    const juce::String getName() const override                  { return "Vocal Aggressor Rack"; }
     bool acceptsMidi() const override                            { return false; }
     bool producesMidi() const override                           { return false; }
     bool isMidiEffect() const override                           { return false; }
     double getTailLengthSeconds() const override                 { return 0.0; }
 
-    //==============================================================================
     int getNumPrograms() override                                { return 1; }
     int getCurrentProgram() override                             { return 0; }
     void setCurrentProgram (int index) override                  {}
     const juce::String getProgramName (int index) override       { return {}; }
     void changeProgramName (int index, const juce::String& newName) override {}
 
-    //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override {}
     void setStateInformation (const void* data, int sizeInBytes) override {}
 
 private:
+    void updateParameters()
+    {
+        // The master Intensity knob drives the range of everything
+        float m = masterIntensity;
+
+        dynamicsModule.functionAmount = 0.3f + m * 0.7f;
+        dynamicsModule.sustainCut = 0.2f + m * 0.8f;
+
+        eqModule.scoopAmount = 0.5f + m * 0.5f;
+        eqModule.biteAmount = 0.4f + m * 0.6f;
+
+        harmonicsModule.gritAmount = 0.2f + m * 0.8f;
+        harmonicsModule.clarityAmount = 0.3f + m * 0.7f;
+
+        shiftModule.pitchShift = m * 2.0f;
+        shiftModule.formantShift = -m * 2.0f;
+
+        spaceModule.mixAmount = 0.1f + m * 0.4f;
+        spaceModule.characterAmount = m;
+    }
+
     //==============================================================================
     PressureDetector pressureDetector;
     DynamicsModule   dynamicsModule;
@@ -134,6 +124,8 @@ private:
     HarmonicsModule  harmonicsModule;
     ShiftModule      shiftModule;
     SpaceModule      spaceModule;
+
+    float masterIntensity = 0.5f; // This would be an AudioParameterFloat
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VocalAggressorRack)

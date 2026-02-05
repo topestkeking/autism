@@ -22,6 +22,13 @@ public:
     void prepare(const juce::dsp::ProcessSpec& spec);
     void process(juce::AudioBuffer<float>& buffer, const PressureDetector& detector);
 
+    // Parameters (would normally be in APVTS, but keeping it simple for now)
+    float functionAmount = 0.5f; // 0.0 to 1.0 (Gate -> Inversion)
+    float sustainCut = 0.5f;
+
 private:
-    // Parameters for dynamics will go here
+    double sampleRate = 44100.0;
+    juce::LinearSmoothedValue<float> smoothedGain { 1.0f };
+
+    float calculateGain(float inputLevel, float intensity, float density);
 };
