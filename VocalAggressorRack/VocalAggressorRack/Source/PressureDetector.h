@@ -41,5 +41,8 @@ private:
     juce::LinearSmoothedValue<float> smoothedDensity   { 0.0f };
     juce::LinearSmoothedValue<float> smoothedTimbre    { 0.0f };
 
+    juce::AudioBuffer<float> monoBuffer;
+    juce::AudioBuffer<float> analysisBuffer;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PressureDetector)
 };

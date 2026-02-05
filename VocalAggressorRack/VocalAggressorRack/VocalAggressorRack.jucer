@@ -10,6 +10,12 @@
       <FILE id="jr8Gfe" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="xarJaN" name="VocalAggressorRack.h" compile="0" resource="0"
             file="Source/VocalAggressorRack.h"/>
+      <FILE id="VAR_C" name="VocalAggressorRack.cpp" compile="1" resource="0"
+            file="Source/VocalAggressorRack.cpp"/>
+      <FILE id="VRE_H" name="VocalAggressorRackEditor.h" compile="0" resource="0"
+            file="Source/VocalAggressorRackEditor.h"/>
+      <FILE id="VRE_C" name="VocalAggressorRackEditor.cpp" compile="1" resource="0"
+            file="Source/VocalAggressorRackEditor.cpp"/>
       <FILE id="PDH" name="PressureDetector.h" compile="0" resource="0" file="Source/PressureDetector.h"/>
       <FILE id="PDC" name="PressureDetector.cpp" compile="1" resource="0"
             file="Source/PressureDetector.cpp"/>
@@ -111,6 +117,28 @@
         <MODULEPATH id="juce_audio_processors_headless" path="../../../JUCE/modules"/>
       </MODULEPATHS>
     </VS2022>
+    <VS2026 targetFolder="Builds/VisualStudio2026">
+      <CONFIGURATIONS>
+        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="VocalAggressorRack"/>
+        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="VocalAggressorRack"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors_headless" path="../../../JUCE/modules"/>
+      </MODULEPATHS>
+    </VS2026>
     <LINUX_MAKE targetFolder="Builds/LinuxMakefile">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="VocalAggressorRack"/>

@@ -30,4 +30,6 @@ private:
 
     // High-pass filter for clarity harmonics
     juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>> clarityHPF;
+
+    juce::AudioBuffer<float> sidechainBuffer;
 };
