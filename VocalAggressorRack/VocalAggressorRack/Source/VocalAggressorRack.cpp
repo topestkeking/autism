@@ -1,3 +1,11 @@
+/*
+  ==============================================================================
+
+    VocalAggressorRack.cpp - Finalized Design
+
+  ==============================================================================
+*/
+
 #include "VocalAggressorRack.h"
 #include "VocalAggressorRackEditor.h"
 

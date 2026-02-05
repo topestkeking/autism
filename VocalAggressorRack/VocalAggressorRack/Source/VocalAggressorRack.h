@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    VocalAggressorRack.h
+    VocalAggressorRack.h - Finalized Design
     Created: 27 Dec 2025 3:30:00pm
     Author:  Jules
 
@@ -162,23 +162,28 @@ public:
 private:
     void updateParameters()
     {
+        // Master INTENSITY controls the range and depth of all reactive components.
+        // At 0% (0.0), it provides a controlled shaper.
+        // At 100% (1.0), it pushes everything into "monster" territory.
         float m = *apvts.getRawParameterValue ("intensity");
+        float aggressionScale = 0.4f + (m * 1.6f); // 0.4x to 2.0x range
 
-        // Use individual knobs but apply Master Intensity as a global multiplier/offset
-        dynamicsModule.functionAmount = *apvts.getRawParameterValue ("dyn_amount") * (0.5f + m * 0.5f);
-        dynamicsModule.sustainCut     = *apvts.getRawParameterValue ("dyn_sustain") * (0.5f + m * 0.5f);
+        dynamicsModule.functionAmount = juce::jlimit(0.0f, 1.0f, (float)*apvts.getRawParameterValue ("dyn_amount") * aggressionScale);
+        dynamicsModule.sustainCut     = juce::jlimit(0.0f, 1.0f, (float)*apvts.getRawParameterValue ("dyn_sustain") * aggressionScale);
 
-        eqModule.scoopAmount = *apvts.getRawParameterValue ("eq_scoop") * (0.5f + m * 0.5f);
-        eqModule.biteAmount  = *apvts.getRawParameterValue ("eq_bite") * (0.5f + m * 0.5f);
+        eqModule.scoopAmount = juce::jlimit(0.0f, 1.0f, (float)*apvts.getRawParameterValue ("eq_scoop") * aggressionScale);
+        eqModule.biteAmount  = juce::jlimit(0.0f, 1.0f, (float)*apvts.getRawParameterValue ("eq_bite") * aggressionScale);
 
-        harmonicsModule.gritAmount    = *apvts.getRawParameterValue ("harm_grit") * (0.5f + m * 0.5f);
-        harmonicsModule.clarityAmount = *apvts.getRawParameterValue ("harm_clarity") * (0.5f + m * 0.5f);
+        harmonicsModule.gritAmount    = juce::jlimit(0.0f, 1.0f, (float)*apvts.getRawParameterValue ("harm_grit") * aggressionScale);
+        harmonicsModule.clarityAmount = juce::jlimit(0.0f, 1.0f, (float)*apvts.getRawParameterValue ("harm_clarity") * aggressionScale);
 
-        shiftModule.pitchShift   = (*apvts.getRawParameterValue ("shift_pitch") - 0.5f) * 4.0f * (0.5f + m * 0.5f);
-        shiftModule.formantShift = (*apvts.getRawParameterValue ("shift_formant") - 0.5f) * 4.0f * (0.5f + m * 0.5f);
+        // Pitch/Formant shifts become much more extreme as intensity rises
+        float shiftScale = 1.0f + (m * 2.0f); // 1x to 3x sensitivity
+        shiftModule.pitchShift   = (*apvts.getRawParameterValue ("shift_pitch") - 0.5f) * 24.0f * shiftScale;
+        shiftModule.formantShift = (*apvts.getRawParameterValue ("shift_formant") - 0.5f) * 24.0f * shiftScale;
 
-        spaceModule.mixAmount       = *apvts.getRawParameterValue ("space_mix") * (0.5f + m * 0.5f);
-        spaceModule.characterAmount = *apvts.getRawParameterValue ("space_char") * (0.5f + m * 0.5f);
+        spaceModule.mixAmount       = juce::jlimit(0.0f, 1.0f, (float)*apvts.getRawParameterValue ("space_mix") * aggressionScale);
+        spaceModule.characterAmount = juce::jlimit(0.0f, 1.0f, (float)*apvts.getRawParameterValue ("space_char") * aggressionScale);
     }
 
     //==============================================================================

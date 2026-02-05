@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    EQModule.h
+    EQModule.h - Finalized Design
     Created: 27 Dec 2025 3:55:00pm
     Author:  Jules
 

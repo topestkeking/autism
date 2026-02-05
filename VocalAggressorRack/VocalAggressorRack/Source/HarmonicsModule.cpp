@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    HarmonicsModule.cpp
+    HarmonicsModule.cpp - Finalized Design
     Created: 27 Dec 2025 4:00:00pm
     Author:  Jules
 
@@ -32,13 +32,16 @@ void HarmonicsModule::process(juce::AudioBuffer<float>& buffer, const PressureDe
     float timbre = detector.getTimbre();
 
     // 1. Grit (Low-mid saturation)
-    // Focused just above where EQ carves mud
-    float gritDrive = 1.0f + gritAmount * 5.0f * intensity * (0.5f + density);
+    // Linked to the EQ's carving: Grit is focused just above where the EQ carves mud (~400-800Hz)
+    // Depth increases with intensity and spectral density.
+    float gritDrive = 1.0f + gritAmount * (4.0f * intensity + density * 2.0f);
 
     // 2. Clarity (High harmonics)
-    // Dynamically shaped to avoid harshness
-    float clarityDrive = 1.0f + clarityAmount * 3.0f * (1.2f - timbre);
-    *clarityHPF.state = *juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 5000.0f);
+    // Dynamically shaped to avoid amplifying harsh frequencies identified by the Timbre detector.
+    float clarityDrive = 1.0f + clarityAmount * 3.0f * (1.0f - timbre);
+
+    // The Clarity path is high-passed to stay in the "Air" region
+    *clarityHPF.state = *juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 6000.0f);
 
     // sidechainBuffer is pre-allocated in prepare
     int numSamples = buffer.getNumSamples();

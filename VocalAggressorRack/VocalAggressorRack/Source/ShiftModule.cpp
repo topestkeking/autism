@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    ShiftModule.cpp
+    ShiftModule.cpp - Finalized Design
     Created: 27 Dec 2025 4:05:00pm
     Author:  Jules
 
@@ -30,14 +30,18 @@ void ShiftModule::process(juce::AudioBuffer<float>& buffer, const PressureDetect
 {
     float intensity = detector.getIntensity();
 
-    // Automatic "bloom": as intensity increases, shift formant down and pitch up (as requested)
-    float dynamicFormant = formantShift - (intensity * 5.0f);
-    float dynamicPitch = pitchShift + (intensity * 2.0f);
+    // The "Demonic Bloom": The shift module reacts to the performance.
+    // We set a base formant shift, and as intensity increases, it "blooms" further down (demonic).
+    // The README mentions a specific -5 semitone bloom target on screams.
+    float bloomAmount = intensity * 5.0f;
+    float dynamicFormant = formantShift - bloomAmount;
+    float dynamicPitch = pitchShift;
 
-    // This is a very primitive "unstable" pitch shifter for character.
-    // It will produce artifacts, which fits the "aggressive/unstable" design.
+    // Map semitones to ratio
     float ratio = std::pow(2.0f, (dynamicPitch + dynamicFormant) / 12.0f);
-    float delayRange = 500.0f; // samples
+
+    // We use a small delay range to keep it "unstable" and gritty as requested.
+    float delayRange = 400.0f; // samples
 
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {

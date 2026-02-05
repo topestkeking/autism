@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    DynamicsModule.cpp
+    DynamicsModule.cpp - Finalized Design
     Created: 27 Dec 2025 3:50:00pm
     Author:  Jules
 
